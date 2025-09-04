@@ -14,6 +14,7 @@ from datahugger.services import PangaeaDataset
 from datahugger.services import SeaNoeDataset
 from datahugger.services import ZenodoDataset
 from datahugger.services import DESYDataset
+from datahugger.services import LifeWatchItalyDataset
 
 # fast lookup
 SERVICES_NETLOC = {
@@ -120,7 +121,8 @@ SERVICES_NETLOC = {
     "www.sodha.be": DataverseDataset,
     "www.uni-hildesheim.de": DataverseDataset,
     "b2share.eudat.eu": B2shareDataset,
-    "public-doi.desy.de": DESYDataset
+    "public-doi.desy.de": DESYDataset,
+    "data.lifewatchitaly.eu": LifeWatchItalyDataset,
 }
 
 # regexp lookup

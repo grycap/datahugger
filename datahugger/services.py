@@ -446,3 +446,38 @@ class DESYDataset(DatasetDownloader):
 
         self._files = x
         return self._files
+
+
+class LifeWatchItalyDataset(DatasetDownloader):
+    """Downloader for LifeWatch Italy publication."""
+
+    REGEXP_ID = r"https://data\.lifewatchitaly\.eu/entities/dataset/(?P<record_id>.*)"
+
+    # the base entry point of the REST API
+    API_URL = "https://data.lifewatchitaly.eu/server/api/core"
+    API_URL_META = "{api_url}/items/{record_id}/bundles"
+
+    def _get_files_recursive(self, url, folder_name=None, base_url=None):
+        result = []
+
+        # get the data from URL
+        res = requests.get(url)
+        res.raise_for_status()
+        response = res.json()
+
+        for bundle in response["_embedded"]["bundles"]:
+            burl = f"{self.API_URL}/bundles/{bundle['uuid']}/bitstreams"
+            bres = requests.get(burl)
+            bres.raise_for_status()
+            bresponse = bres.json()
+            for file in bresponse["_embedded"]["bitstreams"]:
+                result.append(
+                    {
+                        "name": file["name"],
+                        "size": file["sizeBytes"],
+                        "hash": file["checkSum"]["value"],
+                        "hash_type": file["checkSum"]["checkSumAlgorithm"],
+                        "link": file["_links"]["content"]["href"],
+                    }
+                )
+        return result

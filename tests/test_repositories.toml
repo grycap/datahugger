@@ -126,3 +126,7 @@ files = "111609.xlsx"
 [[desy]]
 location = "https://doi.org/10.60717/17114434-6bb9-4f3c-865f-59395b7c38c3"
 files = "conda_env.yml"
+
+[[lifewatchitaly]]
+location = "https://data.lifewatchitaly.eu/entities/dataset/39ac1ddc-f075-4a03-aaec-5cc8cc58f460"
+files = "Dataset_Biodiversity_Marine_Lifewatch_2015.csv"

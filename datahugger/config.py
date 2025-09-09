@@ -15,6 +15,7 @@ from datahugger.services import SeaNoeDataset
 from datahugger.services import ZenodoDataset
 from datahugger.services import DESYDataset
 from datahugger.services import LifeWatchItalyDataset
+from datahugger.services import MetadataCatalogueLifeWatchDataset
 
 # fast lookup
 SERVICES_NETLOC = {
@@ -123,6 +124,7 @@ SERVICES_NETLOC = {
     "b2share.eudat.eu": B2shareDataset,
     "public-doi.desy.de": DESYDataset,
     "data.lifewatchitaly.eu": LifeWatchItalyDataset,
+    "metadatacatalogue.lifewatch.eu": MetadataCatalogueLifeWatchDataset
 }
 
 # regexp lookup

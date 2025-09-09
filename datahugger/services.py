@@ -481,3 +481,45 @@ class LifeWatchItalyDataset(DatasetDownloader):
                     }
                 )
         return result
+
+
+class MetadataCatalogueLifeWatchDataset(DatasetDownloader):
+    """Downloader for Metadata Catalogue LifeWatch publications.
+       But only for datasets stored in LifeWatch Italy repository.
+    """
+
+    REGEXP_ID = r"https://metadatacatalogue\.lifewatch\.eu/srv/eng/catalog\.search#/metadata/(?P<record_id>.*)"
+
+    # the base entry point of the REST API
+    API_URL = "https://metadatacatalogue.lifewatch.eu/srv/api/records/"
+    API_URL_META = "{api_url}{record_id}"
+
+    def _get_files_recursive(self, url, folder_name=None, base_url=None):
+        # get the data from URL
+        res = requests.get(url, headers={"Accept": "application/json"})
+        res.raise_for_status()
+        response = res.json()
+
+        if "distribution" not in response["dataset"]:
+            raise ValueError("No files available for this record")
+
+        for elem in response["dataset"]["distribution"]:
+            if elem["onlineDescription"] == "Download":
+                url = elem["url"]
+                if "data.lifewatchitaly.eu" in url:
+                    bitstream_id = url.split("/bitstreams/")[1].split("/")[0]
+                    break
+                else:
+                    raise ValueError("Only datasets stored in LifeWatch Italy repository are supported")
+
+        url = f"https://data.lifewatchitaly.eu/server/api/core/bitstreams/{bitstream_id}"
+        res = requests.get(url)
+        res.raise_for_status()
+        bitstream = res.json()
+        return [{
+            "name": bitstream["name"],
+            "size": bitstream["sizeBytes"],
+            "hash": bitstream["checkSum"]["value"],
+            "hash_type": bitstream["checkSum"]["checkSumAlgorithm"],
+            "link": bitstream["_links"]["content"]["href"],
+        }]

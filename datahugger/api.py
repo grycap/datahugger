@@ -60,6 +60,7 @@ def info(
     progress=True,
     print_only=False,
     params=None,
+    zip=False,
 ):
     """Get info on the content of the dataset.
 
@@ -86,6 +87,9 @@ def info(
         the actual files (Dry run). Default: False.
     params: dict
         Extra parameters for the request.
+    zip: bool
+        Download matching members of a single ZIP using HTTP ranges when a
+        filter is supplied. Default: False.
 
     Returns
     -------
@@ -107,6 +111,7 @@ def info(
         progress=progress,
         print_only=print_only,
         params=params,
+        zip=zip,
     )
 
 
@@ -121,6 +126,7 @@ def get(
     progress=True,
     print_only=False,
     params=None,
+    zip=False,
 ):
     """Get the content of repository.
 
@@ -152,6 +158,9 @@ def get(
         the actual files (Dry run). Default: False.
     params: dict
         Extra parameters for the request.
+    zip: bool
+        Download matching members of a single ZIP using HTTP ranges when a
+        filter is supplied. Default: False.
 
     Returns
     -------
@@ -170,6 +179,7 @@ def get(
         progress=progress,
         print_only=print_only,
         params=params,
+        zip=zip,
     )
 
     return service.download(output_folder)

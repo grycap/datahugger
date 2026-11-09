@@ -4,6 +4,8 @@ import json
 import logging
 import os
 import re
+import shutil
+import tempfile
 import time
 import zipfile
 from pathlib import Path
@@ -15,6 +17,7 @@ from jsonpath_ng.ext import parse
 from scitree import scitree
 from tqdm import tqdm
 
+from datahugger.remotezip import HTTPRangeReader
 from datahugger.utils import _format_filename
 from datahugger.utils import _get_url
 from datahugger.utils import _is_url
@@ -58,6 +61,7 @@ class DatasetDownloader:
         checksum=False,
         print_only=False,
         params=None,
+        zip=False,
     ):
         super().__init__()
         self.resource = resource
@@ -69,6 +73,9 @@ class DatasetDownloader:
         self.checksum = checksum
         self.print_only = print_only
         self.params = params
+        self.zip = zip
+        if zip and not unzip:
+            raise ValueError("The zip option cannot be combined with unzip=False.")
 
     def _get_attr_attr(self, record, jsonp):
         try:
@@ -216,6 +223,62 @@ class DatasetDownloader:
                 continue
             zip_info.filename = os.path.basename(zip_info.filename)
             z.extract(zip_info, output_folder)
+
+    def _download_zip_members(self, zip_url, output_folder):
+        if self.checksum:
+            raise ValueError(
+                "The repository checksum cannot be verified when downloading "
+                "individual ZIP members."
+            )
+
+        root = Path(output_folder).resolve()
+        with HTTPRangeReader(zip_url) as reader, zipfile.ZipFile(reader) as archive:
+            for entry in archive.infolist():
+                if entry.is_dir() or not re.match(self.filter_files, entry.filename):
+                    continue
+                if (
+                    self.max_file_size is not None
+                    and entry.file_size >= self.max_file_size
+                ):
+                    if self.progress:
+                        print(f"{_format_filename(entry.filename)}: SKIPPED")
+                    continue
+                parts = entry.filename.split("/")
+                if (
+                    entry.filename.startswith("/")
+                    or "\\" in entry.filename
+                    or any(part in ("", ".", "..") for part in parts)
+                    or ":" in parts[0]
+                ):
+                    raise ValueError(f"Unsafe ZIP member path: {entry.filename!r}")
+                destination = root.joinpath(*parts)
+                try:
+                    destination.resolve().relative_to(root)
+                except ValueError as err:
+                    raise ValueError(
+                        f"Unsafe ZIP member path: {entry.filename!r}"
+                    ) from err
+                if self.print_only:
+                    print(f"{_format_filename(entry.filename)}: COMPLETE")
+                    continue
+                if destination.exists() and not self.force_download:
+                    print("File already exists:", entry.filename)
+                    continue
+                destination.parent.mkdir(parents=True, exist_ok=True)
+                temporary = None
+                try:
+                    with tempfile.NamedTemporaryFile(
+                        dir=destination.parent, delete=False
+                    ) as output:
+                        temporary = Path(output.name)
+                        with archive.open(entry) as source:
+                            shutil.copyfileobj(source, output)
+                    os.replace(temporary, destination)
+                finally:
+                    if temporary is not None and temporary.exists():
+                        temporary.unlink()
+                if self.progress:
+                    print(f"{_format_filename(entry.filename)}: COMPLETE")
 
     def _check_checksums(self, output_folder, files_info):
         """Will compare the checksum values in the files_info with the checksums
@@ -393,6 +456,12 @@ class DatasetDownloader:
             )
             and self.unzip
         ):
+            if self.zip and self.filter_files:
+                self._download_zip_members(self.files[0]["link"], output_folder)
+                return
+            if self.zip and self.print_only:
+                print(f"{_format_filename(self.files[0]['name'])}: COMPLETE")
+                return
             self._unpack_single_folder(self.files[0]["link"], output_folder)
             return
 

@@ -39,12 +39,12 @@ location = "https://hdl.handle.net/10622/6IWVTB"
 files = "Micro_Ethiopia_1941-2020.xlsx"
 
 [[figshare]]
-location = "https://doi.org/10.6084/m9.figshare.8851784.v1"
-files = "cross_year_data2.csv"
+location = "https://doi.org/10.6084/m9.figshare.5616409.v2"
+files = "A Closer Look at Figshare's API.pdf"
 
 [[figshare]]
-location = "https://figshare.com/articles/dataset/Long-term_behavioral_repeatability_in_wild_adult_and_captive_juvenile_turtles_implications_for_personality_development/8851784"
-files = "cross_year_data2.csv"
+location = "https://figshare.com/articles/presentation/A_Closer_Look_at_Figshare_s_API/5616409"
+files = "A Closer Look at Figshare's API.pdf"
 
 [[figshare]]
 location = "https://doi.org/10.15131/shef.data.25233514.v1"

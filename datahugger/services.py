@@ -36,7 +36,12 @@ class ArXivDataset(DatasetDownloader):
 class DataverseDataset(DatasetDownloader):
     """Downloader for Dataverse repository."""
 
-    REGEXP_ID = r"(?P<type>dataset|file)\.xhtml\?persistentId=(?P<record_id>.*)"
+    REQUEST_HEADERS = {"User-Agent": "Datahugger (research data downloader)"}
+
+    REGEXP_ID = (
+        r"(?:(?P<type>dataset|file)\.xhtml|citation)"
+        r"\?persistentId=(?P<record_id>[^&]+)"
+    )
 
     # paths to file attributes
     ATTR_NAME_JSONPATH = "filename"

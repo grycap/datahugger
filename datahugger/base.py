@@ -286,7 +286,8 @@ class DatasetDownloader:
         result = []
 
         # get the data from URL
-        res = requests.get(url)
+        request_headers = getattr(self, "REQUEST_HEADERS", None)
+        res = requests.get(url, headers=request_headers)
         res.raise_for_status()
         response = res.json()
 

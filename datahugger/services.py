@@ -392,23 +392,56 @@ class SeaNoeDataset(DatasetDownloader):
 
 
 class B2shareDataset(DatasetDownloader):
-    """Downloader for B2Share repository."""
+    """Downloader for B2Share's InvenioRDM API."""
 
-    REGEXP_ID = r"b2share\.eudat\.eu\/records\/(?P<record_id>[0-9a-z]+)"
-
-    # the base entry point of the REST API
+    REGEXP_ID = r"b2share\.eudat\.eu\/records\/(?P<record_id>[0-9a-z-]+)"
     API_URL = "https://b2share.eudat.eu/api/"
 
-    # the files and metadata about the dataset
-    API_URL_META = "{api_url}records/{record_id}"
-    META_FILES_JSONPATH = "files[*]"
+    @property
+    def files(self):
+        if hasattr(self, "_files"):
+            return self._files
 
-    # paths to file attributes
-    ATTR_NAME_JSONPATH = "key"
-    ATTR_FILE_LINK_JSONPATH = "ePIC_PID"
-    ATTR_SIZE_JSONPATH = "size"
-    ATTR_HASH_JSONPATH = "checksum"
-    ATTR_HASH_TYPE_VALUE = "md5"
+        record_id = self._params["record_id"]
+        if len(record_id) == 32 and "-" not in record_id:
+            response = requests.get(
+                f"{self.API_URL}records", params={"q": record_id}
+            )
+            response.raise_for_status()
+            hits = response.json().get("hits", {}).get("hits", [])
+            old_id = record_id.lower()
+            record = next(
+                (
+                    hit
+                    for hit in hits
+                    if old_id in hit.get("links", {}).get("doi", "").lower()
+                ),
+                None,
+            )
+            if record is None:
+                raise ValueError(f"B2Share record not found: {record_id}")
+            files_url = record["links"]["files"]
+        else:
+            response = requests.get(f"{self.API_URL}records/{record_id}")
+            response.raise_for_status()
+            files_url = response.json()["links"]["files"]
+
+        response = requests.get(files_url)
+        response.raise_for_status()
+        self._files = []
+        for entry in response.json().get("entries", []):
+            checksum = entry.get("checksum", "")
+            hash_type, separator, file_hash = checksum.partition(":")
+            self._files.append(
+                {
+                    "link": entry.get("links", {}).get("content"),
+                    "name": entry["key"],
+                    "size": entry.get("size"),
+                    "hash": file_hash if separator else checksum or None,
+                    "hash_type": hash_type if separator else None,
+                }
+            )
+        return self._files
 
 
 class DESYDataset(DatasetDownloader):

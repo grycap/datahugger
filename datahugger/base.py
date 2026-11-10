@@ -4,6 +4,8 @@ import json
 import logging
 import os
 import re
+import shutil
+import tempfile
 import time
 import zipfile
 from pathlib import Path
@@ -15,6 +17,7 @@ from jsonpath_ng.ext import parse
 from scitree import scitree
 from tqdm import tqdm
 
+from datahugger.remotezip import HTTPRangeReader
 from datahugger.utils import _format_filename
 from datahugger.utils import _get_url
 from datahugger.utils import _is_url
@@ -223,6 +226,62 @@ class DatasetDownloader:
             zip_info.filename = os.path.basename(zip_info.filename)
             z.extract(zip_info, output_folder)
 
+    def _download_zip_members(self, zip_url, output_folder):
+        if self.checksum:
+            raise ValueError(
+                "The repository checksum cannot be verified when downloading "
+                "individual ZIP members."
+            )
+
+        root = Path(output_folder).resolve()
+        with HTTPRangeReader(zip_url, session=self.session) as reader, zipfile.ZipFile(reader) as archive:
+            for entry in archive.infolist():
+                if entry.is_dir() or not re.match(self.filter_files, entry.filename):
+                    continue
+                if (
+                    self.max_file_size is not None
+                    and entry.file_size >= self.max_file_size
+                ):
+                    if self.progress:
+                        print(f"{_format_filename(entry.filename)}: SKIPPED")
+                    continue
+                parts = entry.filename.split("/")
+                if (
+                    entry.filename.startswith("/")
+                    or "\\" in entry.filename
+                    or any(part in ("", ".", "..") for part in parts)
+                    or ":" in parts[0]
+                ):
+                    raise ValueError(f"Unsafe ZIP member path: {entry.filename!r}")
+                destination = root.joinpath(*parts)
+                try:
+                    destination.resolve().relative_to(root)
+                except ValueError as err:
+                    raise ValueError(
+                        f"Unsafe ZIP member path: {entry.filename!r}"
+                    ) from err
+                if self.print_only:
+                    print(f"{_format_filename(entry.filename)}: COMPLETE")
+                    continue
+                if destination.exists() and not self.force_download:
+                    print("File already exists:", entry.filename)
+                    continue
+                destination.parent.mkdir(parents=True, exist_ok=True)
+                temporary = None
+                try:
+                    with tempfile.NamedTemporaryFile(
+                        dir=destination.parent, delete=False
+                    ) as output:
+                        temporary = Path(output.name)
+                        with archive.open(entry) as source:
+                            shutil.copyfileobj(source, output)
+                    os.replace(temporary, destination)
+                finally:
+                    if temporary is not None and temporary.exists():
+                        temporary.unlink()
+                if self.progress:
+                    print(f"{_format_filename(entry.filename)}: COMPLETE")
+
     def _check_checksums(self, output_folder, files_info):
         """Will compare the checksum values in the files_info with the checksums
         of the downloaded files and will create a file in a new 'generated'
@@ -399,8 +458,21 @@ class DatasetDownloader:
                 self.files[0]["link"].endswith(".zip")
                 or self.files[0]["name"].endswith(".zip")
             )
-            and self.unzip
         ):
+            if self.filter_files and self.unzip:
+                self._download_zip_members(self.files[0]["link"], output_folder)
+                return
+            if not self.unzip:
+                self.download_file(
+                    self.files[0]["link"], output_folder,
+                    file_name=self.files[0]["name"], file_size=self.files[0]["size"],
+                    file_hash=self.files[0]["hash"],
+                    file_hash_type=self.files[0].get("hash_type"),
+                )
+                return
+            if self.print_only:
+                print(f"{_format_filename(self.files[0]['name'])}: COMPLETE")
+                return
             self._unpack_single_folder(self.files[0]["link"], output_folder)
             return
 

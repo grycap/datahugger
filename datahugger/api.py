@@ -60,6 +60,7 @@ def info(
     progress=True,
     print_only=False,
     params=None,
+    token=None,
 ):
     """Get info on the content of the dataset.
 
@@ -86,6 +87,8 @@ def info(
         the actual files (Dry run). Default: False.
     params: dict
         Extra parameters for the request.
+    token: str
+        The authentication token for the service to be sent as an Authorization header.
 
     Returns
     -------
@@ -107,6 +110,7 @@ def info(
         progress=progress,
         print_only=print_only,
         params=params,
+        token=token,
     )
 
 
@@ -121,6 +125,7 @@ def get(
     progress=True,
     print_only=False,
     params=None,
+    token=None,
 ):
     """Get the content of repository.
 
@@ -152,6 +157,8 @@ def get(
         the actual files (Dry run). Default: False.
     params: dict
         Extra parameters for the request.
+    token: str
+        The authentication token for the service to be sent as an Authorization header.
 
     Returns
     -------
@@ -170,6 +177,7 @@ def get(
         progress=progress,
         print_only=print_only,
         params=params,
+        token=token,
     )
 
     return service.download(output_folder)

@@ -39,3 +39,23 @@ folder `data`.
 
     datahugger.get("https://datadryad.org/stash/dataset/doi:10.5061/dryad.x3ffbg7m8", "data")
     ```
+
+## Dryad authentication
+
+Dryad requires an API authentication token to download dataset files. Pass the token with `--auth-token` in the CLI or the `token` argument in Python. See Dryad's [API account documentation](https://github.com/datadryad/dryad-app/blob/main/documentation/apis/api_accounts.md) for information about requesting API access and obtaining a token.
+
+=== "CLI"
+
+    ``` bash
+    datahugger 10.5061/dryad.31zcrjdm5 data --auth-token YOUR_DRYAD_TOKEN
+    ```
+
+=== "Python"
+
+    ``` python
+    import datahugger
+
+    datahugger.get("10.5061/dryad.31zcrjdm5", "data", token="YOUR_DRYAD_TOKEN")
+    ```
+
+Keep your token private; do not commit it to source control or share it publicly.

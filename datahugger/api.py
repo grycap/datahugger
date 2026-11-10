@@ -61,6 +61,7 @@ def info(
     print_only=False,
     params=None,
     zip=False,
+    token=None,
 ):
     """Get info on the content of the dataset.
 
@@ -90,6 +91,8 @@ def info(
     zip: bool
         Download matching members of a single ZIP using HTTP ranges when a
         filter is supplied. Default: False.
+    token: str
+        The authentication token for the service to be sent as an Authorization header.
 
     Returns
     -------
@@ -112,6 +115,7 @@ def info(
         print_only=print_only,
         params=params,
         zip=zip,
+        token=token,
     )
 
 
@@ -127,6 +131,7 @@ def get(
     print_only=False,
     params=None,
     zip=False,
+    token=None,
 ):
     """Get the content of repository.
 
@@ -161,6 +166,8 @@ def get(
     zip: bool
         Download matching members of a single ZIP using HTTP ranges when a
         filter is supplied. Default: False.
+    token: str
+        The authentication token for the service to be sent as an Authorization header.
 
     Returns
     -------
@@ -180,6 +187,7 @@ def get(
         print_only=print_only,
         params=params,
         zip=zip,
+        token=token,
     )
 
     return service.download(output_folder)

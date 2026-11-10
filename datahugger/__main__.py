@@ -109,6 +109,14 @@ def main():
         "May appear multiple times.",
     )
 
+    parser.add_argument(
+        "--auth-token",
+        help="Add an authentication token to the downloader. This will send an "
+             "Authorization header with the value of the token "
+             "(i.e. Authorization Bearer <token>).",
+        default=None,
+    )
+
     # version
     parser.add_argument(
         "-V",
@@ -135,6 +143,7 @@ def main():
             print_only=args.print_only,
             params=args.params,
             zip=args.zip,
+            token=args.auth_token,
         )
 
     except DOIError as doi_err:

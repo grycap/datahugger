@@ -62,6 +62,7 @@ class DatasetDownloader:
         print_only=False,
         params=None,
         zip=False,
+        token=None,
     ):
         super().__init__()
         self.resource = resource
@@ -76,6 +77,11 @@ class DatasetDownloader:
         self.zip = zip
         if zip and not unzip:
             raise ValueError("The zip option cannot be combined with unzip=False.")
+        self.token = token
+
+        self.session = requests.Session()
+        if self.token:
+            self.session.headers["Authorization"] = f"Bearer {self.token}"
 
     def _get_attr_attr(self, record, jsonp):
         try:
@@ -175,7 +181,7 @@ class DatasetDownloader:
 
         if not self.print_only:
             logging.info(f"Downloading file {file_link}")
-            res = requests.get(file_link, stream=True)
+            res = self.session.get(file_link, stream=True)
             res.raise_for_status()
 
             output_fp = Path(output_folder, file_name)
@@ -213,7 +219,7 @@ class DatasetDownloader:
             raise ValueError(f"Failed to parse URL '{url}'") from err
 
     def _unpack_single_folder(self, zip_url, output_folder):
-        r = requests.get(zip_url)
+        r = self.session.get(zip_url)
         r.raise_for_status()
 
         z = zipfile.ZipFile(io.BytesIO(r.content))
@@ -357,7 +363,9 @@ class DatasetDownloader:
         result = []
 
         # get the data from URL
-        res = requests.get(url)
+        request_headers = getattr(self, "REQUEST_HEADERS", None)
+        res = self.session.get(url, headers=request_headers)
+
         res.raise_for_status()
         response = res.json()
 

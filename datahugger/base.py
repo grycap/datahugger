@@ -61,7 +61,6 @@ class DatasetDownloader:
         checksum=False,
         print_only=False,
         params=None,
-        zip=False,
     ):
         super().__init__()
         self.resource = resource
@@ -73,9 +72,7 @@ class DatasetDownloader:
         self.checksum = checksum
         self.print_only = print_only
         self.params = params
-        self.zip = zip
-        if zip and not unzip:
-            raise ValueError("The zip option cannot be combined with unzip=False.")
+
 
     def _get_attr_attr(self, record, jsonp):
         try:
@@ -454,12 +451,19 @@ class DatasetDownloader:
                 self.files[0]["link"].endswith(".zip")
                 or self.files[0]["name"].endswith(".zip")
             )
-            and self.unzip
         ):
-            if self.zip and self.filter_files:
+            if self.filter_files and self.unzip:
                 self._download_zip_members(self.files[0]["link"], output_folder)
                 return
-            if self.zip and self.print_only:
+            if not self.unzip:
+                self.download_file(
+                    self.files[0]["link"], output_folder,
+                    file_name=self.files[0]["name"], file_size=self.files[0]["size"],
+                    file_hash=self.files[0]["hash"],
+                    file_hash_type=self.files[0].get("hash_type"),
+                )
+                return
+            if self.print_only:
                 print(f"{_format_filename(self.files[0]['name'])}: COMPLETE")
                 return
             self._unpack_single_folder(self.files[0]["link"], output_folder)

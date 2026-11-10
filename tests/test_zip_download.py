@@ -81,7 +81,7 @@ def dataset(url, **kwargs):
 
 def test_filtered_zip_download_uses_ranges_and_preserves_paths(zip_server, tmp_path):
     url, state, payload = zip_server
-    downloader = dataset(url, zip=True, filter_files=r"dataset/labels/.*\.xml")
+    downloader = dataset(url, filter_files=r"dataset/labels/.*\.xml")
 
     downloader.download(tmp_path)
 
@@ -94,14 +94,39 @@ def test_filtered_zip_download_uses_ranges_and_preserves_paths(zip_server, tmp_p
 
 def test_zip_no_filter_uses_existing_full_extraction(zip_server, tmp_path):
     url, state, _ = zip_server
-    dataset(url, zip=True).download(tmp_path)
+    dataset(url).download(tmp_path)
     assert (tmp_path / "one.xml").read_bytes() == b"first label"
     assert state["ranges"] == [None]
 
 
+def test_no_unzip_keeps_full_archive(zip_server, tmp_path):
+    url, state, payload = zip_server
+    dataset(url, unzip=False).download(tmp_path)
+    assert (tmp_path / "archive.zip").read_bytes() == payload
+    assert state["ranges"] == [None]
+
+
+def test_no_unzip_with_matching_filter_downloads_whole_archive(
+    zip_server, tmp_path
+):
+    url, state, payload = zip_server
+    dataset(url, unzip=False, filter_files=r"archive\.zip").download(tmp_path)
+    assert (tmp_path / "archive.zip").read_bytes() == payload
+    assert state["ranges"] == [None]
+    assert state["bytes"] == len(payload)
+
+
+def test_no_unzip_with_non_matching_filter_skips(zip_server, tmp_path):
+    url, state, _ = zip_server
+    dataset(url, unzip=False, filter_files=r"nope\.zip").download(tmp_path)
+    assert not list(tmp_path.iterdir())
+    assert state["ranges"] == []
+    assert state["bytes"] == 0
+
+
 def test_zip_dry_run_fetches_only_directory(zip_server, tmp_path, capsys):
     url, state, _ = zip_server
-    dataset(url, zip=True, filter_files=r"dataset/labels/.*", print_only=True).download(
+    dataset(url, filter_files=r"dataset/labels/.*", print_only=True).download(
         tmp_path
     )
     assert "dataset/labels/one.xml" in capsys.readouterr().out
@@ -112,7 +137,7 @@ def test_zip_dry_run_fetches_only_directory(zip_server, tmp_path, capsys):
 
 def test_zip_no_filter_dry_run_does_not_download(zip_server, tmp_path, capsys):
     url, state, _ = zip_server
-    dataset(url, zip=True, print_only=True).download(tmp_path)
+    dataset(url, print_only=True).download(tmp_path)
     assert "archive.zip" in capsys.readouterr().out
     assert state["ranges"] == []
 
@@ -121,7 +146,7 @@ def test_zip_no_range_support_fails_without_reading_archive(zip_server, tmp_path
     url, state, _ = zip_server
     state["support_ranges"] = False
     with pytest.raises(OSError, match="did not honor"):
-        dataset(url, zip=True, filter_files=".*").download(tmp_path)
+        dataset(url, filter_files=".*").download(tmp_path)
     assert state["ranges"] == ["bytes=0-0"]
     assert not list(tmp_path.iterdir())
 
@@ -139,19 +164,19 @@ def test_zip_size_and_overwrite_options(zip_server, tmp_path):
     first.parent.mkdir(parents=True)
     first.write_bytes(b"existing")
     dataset(
-        url, zip=True, filter_files=r"dataset/labels/.*", max_file_size=12
+        url, filter_files=r"dataset/labels/.*", max_file_size=12
     ).download(tmp_path)
     assert first.read_bytes() == b"existing"
     assert not (first.parent / "two.xml").exists()
     dataset(
-        url, zip=True, filter_files=r"dataset/labels/one\.xml", force_download=True
+        url, filter_files=r"dataset/labels/one\.xml", force_download=True
     ).download(tmp_path)
     assert first.read_bytes() == b"first label"
 
 
 def test_zip_filter_no_matches(zip_server, tmp_path):
     url, _, _ = zip_server
-    dataset(url, zip=True, filter_files=r"missing/.*").download(tmp_path)
+    dataset(url, filter_files=r"missing/.*").download(tmp_path)
     assert not list(tmp_path.iterdir())
 
 
@@ -163,7 +188,7 @@ def test_zip_rejects_unsafe_paths(zip_server, tmp_path, filename):
         archive.writestr(filename, b"unsafe")
     state["payload"] = buffer.getvalue()
     with pytest.raises(ValueError, match="Unsafe ZIP member path"):
-        dataset(url, zip=True, filter_files=".*").download(tmp_path / "output")
+        dataset(url, filter_files=".*").download(tmp_path / "output")
     assert not (tmp_path / "outside.txt").exists()
 
 
@@ -175,7 +200,7 @@ def test_zip_rejects_symlink_outside_output(zip_server, tmp_path):
     root.mkdir()
     (root / "dataset").symlink_to(outside, target_is_directory=True)
     with pytest.raises(ValueError, match="Unsafe ZIP member path"):
-        dataset(url, zip=True, filter_files=r"dataset/labels/.*").download(root)
+        dataset(url, filter_files=r"dataset/labels/.*").download(root)
     assert not list(outside.iterdir())
 
 
@@ -190,24 +215,21 @@ def test_zip_corrupt_member_does_not_replace_existing_file(zip_server, tmp_path)
     destination = tmp_path / "one.txt"
     destination.write_bytes(b"existing")
     with pytest.raises(zipfile.BadZipFile, match="CRC"):
-        dataset(url, zip=True, filter_files=".*", force_download=True).download(
+        dataset(url, filter_files=".*", force_download=True).download(
             tmp_path
         )
     assert destination.read_bytes() == b"existing"
     assert list(tmp_path.iterdir()) == [destination]
 
 
-def test_zip_rejects_conflicting_options(zip_server, tmp_path):
+def test_filtered_zip_rejects_checksum(zip_server, tmp_path):
     url, state, _ = zip_server
-    with pytest.raises(ValueError, match="unzip=False"):
-        dataset(url, zip=True, unzip=False)
     with pytest.raises(ValueError, match="checksum"):
-        dataset(url, zip=True, filter_files=".*", checksum=True).download(tmp_path)
+        dataset(url, filter_files=".*", checksum=True).download(tmp_path)
     assert state["ranges"] == []
 
 
-@pytest.mark.parametrize("flag", ["-z", "--zip"])
-def test_cli_zip_option(monkeypatch, tmp_path, flag):
+def test_cli_filter_option(monkeypatch, tmp_path):
     calls = []
     monkeypatch.setattr(
         cli, "get", lambda *args, **kwargs: calls.append((args, kwargs))
@@ -215,14 +237,13 @@ def test_cli_zip_option(monkeypatch, tmp_path, flag):
     monkeypatch.setattr(
         sys,
         "argv",
-        ["datahugger", "10.1/example", str(tmp_path), flag, "--filter-files", ".*"],
+        ["datahugger", "10.1/example", str(tmp_path), "--filter-files", ".*"],
     )
     cli.main()
-    assert calls[0][1]["zip"] is True
     assert calls[0][1]["filter_files"] == ".*"
 
 
-def test_python_api_passes_zip(monkeypatch):
+def test_python_api_filter_needs_no_zip_option(monkeypatch):
     calls = []
 
     def service(resource, **kwargs):
@@ -231,5 +252,5 @@ def test_python_api_passes_zip(monkeypatch):
 
     monkeypatch.setattr("datahugger.api.parse_resource_identifier", lambda value: value)
     monkeypatch.setattr("datahugger.api._resolve_service", lambda value: service)
-    datahugger.info("resource", zip=True)
-    assert calls[0]["zip"] is True
+    datahugger.info("resource", filter_files=".*")
+    assert calls[0]["filter_files"] == ".*"

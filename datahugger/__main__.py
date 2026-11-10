@@ -73,12 +73,6 @@ def main():
     parser.add_argument("--no-unzip", dest="unzip", action="store_false")
     parser.set_defaults(unzip=True)
 
-    parser.add_argument(
-        "-z",
-        "--zip",
-        action="store_true",
-        help="For a single ZIP, download filtered members using HTTP ranges.",
-    )
 
     parser.add_argument("--checksum", dest="checksum", action="store_true")
 
@@ -134,7 +128,6 @@ def main():
             progress=args.progress,
             print_only=args.print_only,
             params=args.params,
-            zip=args.zip,
         )
 
     except DOIError as doi_err:

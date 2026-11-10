@@ -60,7 +60,6 @@ def info(
     progress=True,
     print_only=False,
     params=None,
-    zip=False,
 ):
     """Get info on the content of the dataset.
 
@@ -72,12 +71,16 @@ def info(
         The maximum number of bytes for a single file. If exceeded,
         the file is skipped.
     filter_files string
-        A regex pattern to filter files by name.
+        A regex pattern to filter files by name. When the dataset is
+        a single ZIP archive and unzip is True, the pattern is matched
+        against the archive members; with unzip False, it is matched
+        against the actual file name of the archive.
     force_download: bool
         Force the download of the dataset even if there are already
         files in the destination folder. Default: False.
     unzip: bool
-        Unzip is the output is a single zip file. Default: True.
+        Extract the archive when the dataset is a single zip file.
+        If False, the zip file itself is kept. Default: True.
     checksum: bool
         Checksum will check the checksum of downloaded files. Default: False.
     progress: bool
@@ -87,9 +90,6 @@ def info(
         the actual files (Dry run). Default: False.
     params: dict
         Extra parameters for the request.
-    zip: bool
-        Download matching members of a single ZIP using HTTP ranges when a
-        filter is supplied. Default: False.
 
     Returns
     -------
@@ -111,7 +111,6 @@ def info(
         progress=progress,
         print_only=print_only,
         params=params,
-        zip=zip,
     )
 
 
@@ -126,7 +125,6 @@ def get(
     progress=True,
     print_only=False,
     params=None,
-    zip=False,
 ):
     """Get the content of repository.
 
@@ -143,12 +141,16 @@ def get(
         The maximum number of bytes for a single file. If exceeded,
         the file is skipped.
     filter_files string
-        A regex pattern to filter files by name.
+        A regex pattern to filter files by name. When the dataset is
+        a single ZIP archive and unzip is True, the pattern is matched
+        against the archive members; with unzip False, it is matched
+        against the actual file name of the archive.
     force_download: bool
         Force the download of the dataset even if there are already
         files in the destination folder. Default: False.
     unzip: bool
-        Unzip is the output is a single zip file. Default: True.
+        Extract the archive when the dataset is a single zip file.
+        If False, the zip file itself is kept. Default: True.
     checksum: bool
         Checksum will check the checksum of downloaded files Default: False.
     progress: bool
@@ -158,9 +160,6 @@ def get(
         the actual files (Dry run). Default: False.
     params: dict
         Extra parameters for the request.
-    zip: bool
-        Download matching members of a single ZIP using HTTP ranges when a
-        filter is supplied. Default: False.
 
     Returns
     -------
@@ -179,7 +178,6 @@ def get(
         progress=progress,
         print_only=print_only,
         params=params,
-        zip=zip,
     )
 
     return service.download(output_folder)

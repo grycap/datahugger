@@ -25,6 +25,7 @@ def zip_server():
     payload = buffer.getvalue()
     state = {
         "ranges": [],
+        "authorization": [],
         "bytes": 0,
         "support_ranges": True,
         "bad_range": False,
@@ -36,6 +37,7 @@ def zip_server():
             payload = state["payload"]
             requested = self.headers.get("Range")
             state["ranges"].append(requested)
+            state["authorization"].append(self.headers.get("Authorization"))
             if requested and state["support_ranges"]:
                 match = re.fullmatch(r"bytes=(\d+)-(\d+)", requested)
                 start, end = map(int, match.groups())
@@ -90,6 +92,17 @@ def test_filtered_zip_download_uses_ranges_and_preserves_paths(zip_server, tmp_p
     assert not (tmp_path / "dataset/images").exists()
     assert all(state["ranges"])
     assert state["bytes"] < len(payload) // 10
+
+
+def test_filtered_zip_range_requests_use_authenticated_session(zip_server, tmp_path):
+    url, state, _ = zip_server
+    downloader = dataset(url, filter_files=r"dataset/labels/one\.xml", token="test-token")
+
+    downloader.download(tmp_path)
+
+    assert (tmp_path / "dataset/labels/one.xml").read_bytes() == b"first label"
+    assert state["authorization"]
+    assert set(state["authorization"]) == {"Bearer test-token"}
 
 
 def test_zip_no_filter_uses_existing_full_extraction(zip_server, tmp_path):
@@ -149,6 +162,22 @@ def test_zip_no_range_support_fails_without_reading_archive(zip_server, tmp_path
         dataset(url, filter_files=".*").download(tmp_path)
     assert state["ranges"] == ["bytes=0-0"]
     assert not list(tmp_path.iterdir())
+
+
+def test_range_reader_splits_large_reads_into_bounded_requests(zip_server):
+    url, state, payload = zip_server
+    reader = HTTPRangeReader(url)
+
+    data = reader.read()
+
+    assert data == payload
+    requested_sizes = [
+        int(match.group(2)) - int(match.group(1)) + 1
+        for value in state["ranges"]
+        if (match := re.fullmatch(r"bytes=(\d+)-(\d+)", value))
+    ]
+    assert max(requested_sizes) <= reader.block_size
+    assert len(requested_sizes) > 1
 
 
 def test_zip_invalid_content_range_is_rejected(zip_server):

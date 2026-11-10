@@ -7,9 +7,18 @@ import requests
 
 
 class HTTPRangeReader(io.RawIOBase):
-    def __init__(self, url):
+    """Seekable HTTP reader that limits each range response to 64 KiB.
+
+    ``read()`` still returns the requested bytes, so a caller requesting a large
+    result necessarily receives a correspondingly large bytes object.
+    """
+
+    block_size = 64 * 1024
+
+    def __init__(self, url, session=None):
         super().__init__()
         self.url = url
+        self.session = session if session is not None else requests.Session()
         self.position = 0
         self.size = None
         self.validator = None
@@ -39,14 +48,23 @@ class HTTPRangeReader(io.RawIOBase):
         return position
 
     def read(self, size=-1):
+        if self.size is None:
+            raise OSError("The ZIP size is unknown.")
         if size is None or size < 0:
             size = self.size - self.position
-        end = min(self.position + size, self.size)
-        if end <= self.position:
+        size = min(size, self.size - self.position)
+        if size <= 0:
             return b""
-        data = self._get_range(self.position, end - 1)
+
+        data = bytearray()
+        start = self.position
+        end = self.position + size
+        while start < end:
+            chunk_size = min(self.block_size, end - start)
+            data.extend(self._get_range(start, start + chunk_size - 1))
+            start += chunk_size
         self.position += len(data)
-        return data
+        return bytes(data)
 
     def _get_range(self, start, end):
         headers = {
@@ -55,7 +73,7 @@ class HTTPRangeReader(io.RawIOBase):
         }
         if self.validator:
             headers["If-Range"] = self.validator
-        with requests.get(
+        with self.session.get(
             self.url, headers=headers, stream=True, timeout=(10, 30)
         ) as response:
             response.raise_for_status()

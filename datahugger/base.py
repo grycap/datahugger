@@ -234,7 +234,7 @@ class DatasetDownloader:
             )
 
         root = Path(output_folder).resolve()
-        with HTTPRangeReader(zip_url) as reader, zipfile.ZipFile(reader) as archive:
+        with HTTPRangeReader(zip_url, session=self.session) as reader, zipfile.ZipFile(reader) as archive:
             for entry in archive.infolist():
                 if entry.is_dir() or not re.match(self.filter_files, entry.filename):
                     continue

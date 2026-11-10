@@ -43,16 +43,17 @@ Disable auto unzip function
 
 ### Download selected files from a ZIP
 
-When a dataset contains a single ZIP, use `--zip` (or `-z`) with
-`--filter-files` to download only matching ZIP members. The filter is a Python
-regular expression matched from the beginning of each member's **full path**
-inside the ZIP, and the paths are preserved in the output directory.
+When a dataset contains a single ZIP, use `--filter-files` to download only
+matching ZIP members. ZIP extraction is enabled by default; in Python, set
+`unzip=True`. The filter is a Python regular expression matched from the
+beginning of each member's **full path** inside the ZIP, and the paths are
+preserved in the output directory. With `--no-unzip` (`unzip=False` in Python),
+the filter applies to the ZIP file itself instead.
 
 === "CLI"
 
     ``` bash
-    datahugger 10.5281/zenodo.10809434 data --zip \
-      --filter-files 'obsea_dataset/labels/.*\.xml'
+    datahugger 10.5281/zenodo.10809434 data --filter-files 'obsea_dataset/labels/.*\.xml'
     ```
 
 === "Python"
@@ -60,7 +61,7 @@ inside the ZIP, and the paths are preserved in the output directory.
     ``` python
     datahugger.get(
         "10.5281/zenodo.10809434", "data",
-        zip=True, filter_files=r"obsea_dataset/labels/.*\.xml",
+        unzip=True, filter_files=r"obsea_dataset/labels/.*\.xml",
     )
     ```
 
@@ -71,9 +72,8 @@ members are checked against their ZIP CRC. Repository checksums for the complete
 ZIP cannot be verified in this mode, so `--checksum` is not supported.
 `--max-file-size` applies to the uncompressed size of each selected member,
 `--force-download` controls overwriting, and `--dry-run` lists matches without
-downloading their contents. Without a filter, `--zip` uses the normal full ZIP
-download and extraction behavior, which flattens folder paths. `--zip` cannot
-be combined with `--no-unzip`.
+downloading their contents. Without a filter, the full ZIP is downloaded and
+extracted normally, which flattens folder paths.
 
 
 ## Download mode

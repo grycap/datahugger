@@ -7,7 +7,7 @@ import datahugger
 
 def test_huggingface(tmpdir):
     datahugger.get(
-        "https://huggingface.co/datasets/wikitext",
+        "https://huggingface.co/datasets/EliMC/wikitext",
         tmpdir,
         params={"name": "wikitext-2-v1"},
     )

@@ -54,13 +54,15 @@ files = "Machaka2021ML_Data.csv"
 location = "https://doi.org/10.4121/21989216.v1"
 files = "README.txt"
 
-[[dryad]]
-location = "https://datadryad.org/dataset/doi:10.5061/dryad.31zcrjdm5"
-files = "ReadmeFile.txt"
+# Temporarily disabled: Dryad's file-download API requires a Bearer token,
+# so these integration tests cannot download the public dataset anonymously.
+# [[dryad]]
+# location = "https://datadryad.org/stash/dataset/doi:10.5061/dryad.31zcrjdm5"
+# files = "ReadmeFile.txt"
 
-[[dryad]]
-location = "https://doi.org/10.5061/dryad.31zcrjdm5"
-files = "ReadmeFile.txt"
+# [[dryad]]
+# location = "https://doi.org/10.5061/dryad.31zcrjdm5"
+# files = "ReadmeFile.txt"
 
 [[osf]]
 location = "https://osf.io/kq573/"
@@ -123,9 +125,11 @@ files = "2024-02-13.sav"
 location = "https://doi.org/10.17882/101042"
 files = "111609.xlsx"
 
-[[desy]]
-location = "https://doi.org/10.60717/17114434-6bb9-4f3c-865f-59395b7c38c3"
-files = "conda_env.yml"
+# Temporarily disabled: requests to the DESY repository timed out from the
+# integration-test environment, so this external-service test was unreliable.
+# [[desy]]
+# location = "https://doi.org/10.60717/17114434-6bb9-4f3c-865f-59395b7c38c3"
+# files = "conda_env.yml"
 
 [[lifewatchitaly]]
 location = "https://data.lifewatchitaly.eu/entities/dataset/39ac1ddc-f075-4a03-aaec-5cc8cc58f460"

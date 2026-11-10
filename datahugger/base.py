@@ -76,8 +76,6 @@ class DatasetDownloader:
         if self.token:
             self.session.headers["Authorization"] = f"Bearer {self.token}"
 
-        self.session = requests.Session()
-
     def _get_attr_attr(self, record, jsonp):
         try:
             jsonpath_expression = parse(jsonp)

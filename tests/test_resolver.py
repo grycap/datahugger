@@ -4,7 +4,34 @@ import datahugger
 from datahugger.api import _resolve_service
 from datahugger.handles import DOI
 from datahugger.handles import ArXiv
+from datahugger.services import DataDryadDataset
 from datahugger.services import DataverseDataset
+
+
+def test_dryad_stash_dataset_url_parsing():
+    service = DataDryadDataset(
+        "https://datadryad.org/stash/dataset/doi:10.5061/dryad.31zcrjdm5"
+    )
+
+    assert service._params == {"record_id": "10.5061/dryad.31zcrjdm5"}
+
+
+def test_dataverse_citation_url_parsing():
+    service = DataverseDataset(
+        "https://dataverse.harvard.edu/citation?persistentId="
+        "doi:10.7910/DVN/KBHLOD"
+    )
+
+    assert service._params == {
+        "type": None,
+        "record_id": "doi:10.7910/DVN/KBHLOD",
+    }
+    assert service.API_URL_META.format(
+        base_url="https://dataverse.harvard.edu", **service._params
+    ) == (
+        "https://dataverse.harvard.edu/api/datasets/:persistentId/versions/"
+        ":latest-published/?persistentId=doi:10.7910/DVN/KBHLOD"
+    )
 
 
 def test_resolve_service():

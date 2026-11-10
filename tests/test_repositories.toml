@@ -26,6 +26,15 @@ ignored_files="quasiperiod.txt.gz"
     [zenodo.options]
     max_file_size=1000000
 
+[[zenodo]]
+location = "https://doi.org/10.5281/zenodo.10809433"
+files = "obsea_dataset_v4.1/labels/20240215-Video-3Cameras_frame34.txt"
+
+    [zenodo.options]
+    filter_files = "^obsea_dataset_v4\\.1/labels/20240215-Video-3Cameras_frame34\\.txt$"
+    unzip = true
+    progress = false
+
 [[dataverse]]
 location = "https://dataverse.harvard.edu/dataset.xhtml?persistentId=doi:10.7910/DVN/KBHLOD"
 files = "tutorial1.py"

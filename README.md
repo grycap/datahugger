@@ -1,5 +1,5 @@
 <p align="center">
-  <img width="360px" alt="Datahugger - Where DOI hugs Data" src="https://github.com/J535D165/datahugger/raw/main/datahugger_logo.svg">
+  <img width="360px" alt="Datahugger - Where DOI hugs Data" src="https://github.com/grycap/datahugger/raw/main/datahugger_logo.svg">
 </p>
 
 # Datahugger - Where DOI :open_hands: Data
@@ -13,7 +13,7 @@ Datahugger offers support for more than [<!-- count -->377<!-- count --> generic
 [![Datahugger support Zenodo, Dataverse, DataOne, GitHub, FigShare, HuggingFace, Mendeley Data, Dryad, OSF, and many more](https://github.com/J535D165/datahugger/raw/main/docs/images/logos.png)](https://j535d165.github.io/datahugger/repositories)
 
 We are still expanding Datahugger with support for more repositories. You can
-help by [requesting support for a repository](https://github.com/J535D165/datahugger/issues/new/choose) in the issue
+help by [requesting support for a repository](https://github.com/grycap/datahugger/issues/new/choose) in the issue
 tracker. Pull Requests are very welcome as well.
 
 ## Installation
@@ -35,19 +35,19 @@ Load a dataset (or any digital asset) from a repository with the
 and the second is the folder name to store the dataset (it will be
 created if it does not exist).
 
-The following code loads dataset [10.5061/dryad.mj8m0](https://doi.org/10.5061/dryad.mj8m0) into
-the folder `data`.
+The following code loads the Zenodo dataset [10.5281/zenodo.6625880](https://doi.org/10.5281/zenodo.6625880) into
+the folder `data`. This dataset is also used in the repository integration tests.
 
 ```python
 import datahugger
 
 # download the dataset to the folder "data"
-datahugger.get("10.5061/dryad.mj8m0", "data")
+datahugger.get("10.5281/zenodo.6625880", "data")
 ```
 
 For an example of how this can integrate with your work, see the
-[example workflow notebook](https://github.com/J535D165/datahugger/blob/main/examples/example_datahugger_in_workflow.ipynb) or
-[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/J535D165/datahugger/blob/main/examples/example_datahugger_in_workflow.ipynb)
+[example workflow notebook](https://github.com/grycap/datahugger/blob/main/examples/example_datahugger_in_workflow.ipynb) or
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/grycap/datahugger/blob/main/examples/example_datahugger_in_workflow.ipynb)
 
 
 ### Datahugger with command line
@@ -57,24 +57,27 @@ argument is the DOI or URL, and the second argument is the name of the folder to
 created if it does not exist).
 
 ```bash
-datahugger 10.5061/dryad.mj8m0 data
+datahugger 10.5281/zenodo.6625880 data
 ```
 
 ```bash
-% datahugger 10.5061/dryad.mj8m0 data
-Collecting...
-NestTemperatureData.csv            : 100%|████████████████████████████████████████| 607k/607k
-README_for_NestTemperatureData.txt : 100%|██████████████████████████████████████| 2.82k/2.82k
-ExternalTemps.csv                  : 100%|██████████████████████████████████████| 1.06k/1.06k
-README_for_ExternalTemps.txt       : 100%|██████████████████████████████████████| 2.82k/2.82k
-InternalEggTempData.csv            : 100%|██████████████████████████████████████████| 664/664
-README_for_InternalEggTempData.txt : 100%|██████████████████████████████████████| 2.82k/2.82k
-SoilSimulation_Output.csv          : 100%|████████████████████████████████████████| 229M/229M
-README_for_SoilSimulation_[...].txt: 100%|██████████████████████████████████████| 2.82k/2.82k
-Dataset successfully downloaded.
+% datahugger 10.5281/zenodo.6625880 data
+quasiperiod.ipynb                  : 100%|██████████████████████████████████████████| 252k/252k
+quasiperiod_svm_learning_cu[...].py: 100%|████████████████████████████████████████| 1.96k/1.96k
+quasiperiod_log_svm_hyperpa[...].py: 100%|████████████████████████████████████████| 2.62k/2.62k
+rational_dimension.ipynb           : 100%|████████████████████████████████████████| 97.7k/97.7k
+quasiperiod_svm_learning_cu[...].py: 100%|████████████████████████████████████████| 1.96k/1.96k
+README.txt                         : |                                            | 2.95k/0.00
+quasiperiod_log_svm_learnin[...].py: 100%|████████████████████████████████████████| 1.98k/1.98k
+quasiperiod_svm_learning_cu[...].py: 100%|████████████████████████████████████████| 1.96k/1.96k
+quasiperiod_log_svm_learnin[...].py: 100%|████████████████████████████████████████| 1.98k/1.98k
+quasiperiod.m                      : 100%|████████████████████████████████████████| 3.25k/3.25k
+quasiperiod.txt.gz                 : |                                            | 1.76G/0.00
+quasiperiod_log_svm_learnin[...].py: 100%|████████████████████████████████████████| 1.98k/1.98k
+quasiperiod_svm_hyperparame[...].py: 100%|████████████████████████████████████████| 2.65k/2.65k
 ```
 
-**Tip:** On some systems, you have to quote the DOI or URL. For example: `datahugger "10.5061/dryad.mj8m0" data`.
+**Tip:** On some systems, you have to quote the DOI or URL. For example: `datahugger "10.5281/zenodo.6625880" data`.
 
 ## Tips and tricks
 

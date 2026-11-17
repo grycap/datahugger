@@ -50,6 +50,12 @@ beginning of each member's **full path** inside the ZIP, and the paths are
 preserved in the output directory. With `--no-unzip` (`unzip=False` in Python),
 the filter applies to the ZIP file itself instead.
 
+When listing files with `datahugger.info(..., filter_files=...).files`, matching
+ZIP members include `is_archive_member: true`. Their `link` still identifies
+the containing ZIP archive; it is not a standalone download URL for that
+member. The member's `name` and uncompressed `size` describe the entry inside
+the archive.
+
 === "CLI"
 
     ``` bash

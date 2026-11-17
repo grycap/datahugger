@@ -45,7 +45,7 @@ def test_b2share_resolves_legacy_id_and_reads_v3_file_entries(monkeypatch):
         "https://b2share.eudat.eu/records/db2ef5890fa44c7a85af366a50de73b9"
     )
 
-    assert dataset.files == [
+    expected_files = [
         {
             "link": "https://b2share.eudat.eu/api/records/24x1a-xgx60/files/2024-02-13.sav/content",
             "name": "2024-02-13.sav",
@@ -54,6 +54,9 @@ def test_b2share_resolves_legacy_id_and_reads_v3_file_entries(monkeypatch):
             "hash_type": "md5",
         }
     ]
+    assert dataset.files == expected_files
+    # The download path consumes _repository_files, not the public files view.
+    assert dataset._repository_files == expected_files
     assert requests[0] == (
         "https://b2share.eudat.eu/api/records",
         {"q": "db2ef5890fa44c7a85af366a50de73b9"},

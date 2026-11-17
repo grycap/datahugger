@@ -21,7 +21,7 @@ class ArXivDataset(DatasetDownloader):
     REGEXP_ID = r"https://arxiv\.org/abs/(?P<record_id>.*)"
 
     @property
-    def files(self):
+    def _repository_files(self):
         return [
             {
                 "link": f"https://arxiv.org/pdf/{self._params['record_id']}.pdf",
@@ -121,7 +121,7 @@ class DataOneDataset(DatasetDownloader):
     API_URL = "https://cn.dataone.org/cn/v2/object/"
 
     @property
-    def files(self):
+    def _repository_files(self):
         if hasattr(self, "_files"):
             return self._files
 
@@ -150,6 +150,7 @@ class DataOneDataset(DatasetDownloader):
         return self._files
 
 
+
 class PangaeaDataset(DatasetDownloader):
     """Downloader for PangaeaDataset repository."""
 
@@ -159,7 +160,7 @@ class PangaeaDataset(DatasetDownloader):
     API_URL = "https://doi.pangaea.de/"
 
     @property
-    def files(self):
+    def _repository_files(self):
         # get the difference between collection and file
         r = requests.get(
             f"{self.API_URL}{self._params['record_id']}?format=metadata_jsonld"
@@ -406,7 +407,7 @@ class B2shareDataset(DatasetDownloader):
     API_URL = "https://b2share.eudat.eu/api/"
 
     @property
-    def files(self):
+    def _repository_files(self):
         if hasattr(self, "_files"):
             return self._files
 
@@ -461,7 +462,7 @@ class DESYDataset(DatasetDownloader):
     API_URL = "https://public-doi.desy.de/detail/"
 
     @property
-    def files(self):
+    def _repository_files(self):
         if hasattr(self, "_files"):
             return self._files
 

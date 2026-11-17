@@ -74,7 +74,8 @@ def zip_server():
 
 
 def dataset(url, **kwargs):
-    downloader = DatasetDownloader("https://example.com", progress=False, **kwargs)
+    kwargs.setdefault("progress", False)
+    downloader = DatasetDownloader("https://example.com", **kwargs)
     downloader._files = [
         {"name": "archive.zip", "link": url, "size": None, "hash": None}
     ]
@@ -148,11 +149,61 @@ def test_zip_dry_run_fetches_only_directory(zip_server, tmp_path, capsys):
     assert len(state["ranges"]) == 4  # probe and ZIP directory reads, no members
 
 
+def test_public_info_marks_zip_members_and_reuses_cached_listing(
+    zip_server, monkeypatch
+):
+    url, state, _ = zip_server
+
+    def service(resource, **kwargs):
+        return dataset(url, **kwargs)
+
+    monkeypatch.setattr("datahugger.api.parse_resource_identifier", lambda value: value)
+    monkeypatch.setattr("datahugger.api._resolve_service", lambda value: service)
+    result = datahugger.info(
+        "https://example.test/dataset",
+        filter_files=r"dataset/labels/one\.xml",
+        progress=False,
+    )
+
+    first_listing = result.files
+    requests_after_first_listing = len(state["ranges"])
+    second_listing = result.files
+
+    assert first_listing == second_listing
+    assert first_listing == [
+        {
+            "link": url,
+            "name": "dataset/labels/one.xml",
+            "size": len(b"first label"),
+            "hash": None,
+            "hash_type": None,
+            "is_archive_member": True,
+        }
+    ]
+    assert requests_after_first_listing > 0
+    assert len(state["ranges"]) == requests_after_first_listing
+
+
 def test_zip_no_filter_dry_run_does_not_download(zip_server, tmp_path, capsys):
     url, state, _ = zip_server
     dataset(url, print_only=True).download(tmp_path)
     assert "archive.zip" in capsys.readouterr().out
     assert state["ranges"] == []
+
+
+def test_info_lists_filtered_members_of_single_zip_without_downloading(zip_server):
+    url, state, _ = zip_server
+    downloader = dataset(url, filter_files=r"dataset/labels/.*\.xml")
+
+    files = downloader.files
+
+    assert [file["name"] for file in files] == [
+        "dataset/labels/one.xml",
+        "dataset/labels/two.xml",
+    ]
+    assert all(file["size"] for file in files)
+    assert state["bytes"] < len(state["payload"]) // 10
+    assert all(state["ranges"])
 
 
 def test_zip_no_range_support_fails_without_reading_archive(zip_server, tmp_path):
@@ -283,3 +334,12 @@ def test_python_api_filter_needs_no_zip_option(monkeypatch):
     monkeypatch.setattr("datahugger.api._resolve_service", lambda value: service)
     datahugger.info("resource", filter_files=".*")
     assert calls[0]["filter_files"] == ".*"
+
+
+def test_download_result_length_uses_cached_zip_member_listing(zip_server, tmp_path):
+    url, state, _ = zip_server
+    result = dataset(url, filter_files=r"dataset/labels/.*\.xml").download(tmp_path)
+    requests_after_download = len(state["ranges"])
+
+    assert len(result) == 2
+    assert len(state["ranges"]) == requests_after_download

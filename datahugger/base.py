@@ -76,6 +76,7 @@ class DatasetDownloader:
         self.token = token
 
         self.session = requests.Session()
+        self._zip_members_cache = {}
         if self.token:
             self.session.headers["Authorization"] = f"Bearer {self.token}"
 
@@ -226,19 +227,31 @@ class DatasetDownloader:
             zip_info.filename = os.path.basename(zip_info.filename)
             z.extract(zip_info, output_folder)
 
+    def _zip_members(self, zip_url, archive):
+        members = [
+            {
+                "link": zip_url,
+                "name": entry.filename,
+                "size": entry.file_size,
+                "hash": None,
+                "hash_type": None,
+            }
+            for entry in archive.infolist()
+            if not entry.is_dir()
+        ]
+        self._zip_members_cache[zip_url] = members
+        return members
+
     def _list_zip_members(self, zip_url):
-        with HTTPRangeReader(zip_url, session=self.session) as reader, zipfile.ZipFile(reader) as archive:
-            return [
-                {
-                    "link": zip_url,
-                    "name": entry.filename,
-                    "size": entry.file_size,
-                    "hash": None,
-                    "hash_type": None,
-                }
-                for entry in archive.infolist()
-                if not entry.is_dir() and re.match(self.filter_files, entry.filename)
-            ]
+        members = self._zip_members_cache.get(zip_url)
+        if members is None:
+            with HTTPRangeReader(zip_url, session=self.session) as reader, zipfile.ZipFile(reader) as archive:
+                members = self._zip_members(zip_url, archive)
+        return [
+            member
+            for member in members
+            if re.match(self.filter_files, member["name"])
+        ]
 
     def _download_zip_members(self, zip_url, output_folder):
         if self.checksum:
@@ -249,6 +262,7 @@ class DatasetDownloader:
 
         root = Path(output_folder).resolve()
         with HTTPRangeReader(zip_url, session=self.session) as reader, zipfile.ZipFile(reader) as archive:
+            self._zip_members(zip_url, archive)
             for entry in archive.infolist():
                 if entry.is_dir() or not re.match(self.filter_files, entry.filename):
                     continue

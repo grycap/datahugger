@@ -298,3 +298,12 @@ def test_python_api_filter_needs_no_zip_option(monkeypatch):
     monkeypatch.setattr("datahugger.api._resolve_service", lambda value: service)
     datahugger.info("resource", filter_files=".*")
     assert calls[0]["filter_files"] == ".*"
+
+
+def test_download_result_length_uses_cached_zip_member_listing(zip_server, tmp_path):
+    url, state, _ = zip_server
+    result = dataset(url, filter_files=r"dataset/labels/.*\.xml").download(tmp_path)
+    requests_after_download = len(state["ranges"])
+
+    assert len(result) == 2
+    assert len(state["ranges"]) == requests_after_download

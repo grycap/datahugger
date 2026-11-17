@@ -149,6 +149,11 @@ class DataOneDataset(DatasetDownloader):
         self._files = x
         return self._files
 
+    @property
+    def _repository_files(self):
+        """Return files parsed from the DataONE metadata response."""
+        return self.files
+
 
 class PangaeaDataset(DatasetDownloader):
     """Downloader for PangaeaDataset repository."""
@@ -406,7 +411,7 @@ class B2shareDataset(DatasetDownloader):
     API_URL = "https://b2share.eudat.eu/api/"
 
     @property
-    def files(self):
+    def _repository_files(self):
         if hasattr(self, "_files"):
             return self._files
 

@@ -25,18 +25,18 @@ def pytest_generate_tests(metafunc):
 
     if "location" in metafunc.fixturenames:
         if service_value := metafunc.config.option.service:
+            if service_value not in test_repos:
+                raise ValueError(f"Unknown service {service_value}")
             metafunc.parametrize(
                 "location,files,ignored_files,dh_kwargs",
-                map(_parse_repositories, test_repos[service_value]),
+                [_parse_repositories(repo) for repo in test_repos[service_value]],
             )
         else:
-            if service_value and service_value not in test_repos:
-                raise ValueError(f"Unknown service {service_value}")
-
             metafunc.parametrize(
                 "location,files,ignored_files,dh_kwargs",
-                map(
-                    _parse_repositories,
-                    [v for _, service_v in test_repos.items() for v in service_v],
-                ),
+                [
+                    _parse_repositories(repo)
+                    for service_repos in test_repos.values()
+                    for repo in service_repos
+                ],
             )

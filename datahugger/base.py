@@ -226,6 +226,20 @@ class DatasetDownloader:
             zip_info.filename = os.path.basename(zip_info.filename)
             z.extract(zip_info, output_folder)
 
+    def _list_zip_members(self, zip_url):
+        with HTTPRangeReader(zip_url, session=self.session) as reader, zipfile.ZipFile(reader) as archive:
+            return [
+                {
+                    "link": zip_url,
+                    "name": entry.filename,
+                    "size": entry.file_size,
+                    "hash": None,
+                    "hash_type": None,
+                }
+                for entry in archive.infolist()
+                if not entry.is_dir() and re.match(self.filter_files, entry.filename)
+            ]
+
     def _download_zip_members(self, zip_url, output_folder):
         if self.checksum:
             raise ValueError(
@@ -429,7 +443,7 @@ class DatasetDownloader:
         return self.__params
 
     @property
-    def files(self):
+    def _repository_files(self):
         if hasattr(self, "_files"):
             return self._files
 
@@ -445,39 +459,48 @@ class DatasetDownloader:
             ),
             base_url=base_url,
         )
-
         return self._files
 
-    def _get(
-        self,
-        output_folder: Union[Path, str],
-    ):
+    @property
+    def files(self):
+        files = self._repository_files
         if (
-            len(self.files) == 1
+            self.filter_files
+            and self.unzip
+            and len(files) == 1
+            and (files[0]["link"].endswith(".zip") or files[0]["name"].endswith(".zip"))
+        ):
+            return self._list_zip_members(files[0]["link"])
+        return files
+
+    def _get(self, output_folder: Union[Path, str]):
+        files = self._repository_files
+        if (
+            len(files) == 1
             and (
-                self.files[0]["link"].endswith(".zip")
-                or self.files[0]["name"].endswith(".zip")
+                files[0]["link"].endswith(".zip")
+                or files[0]["name"].endswith(".zip")
             )
         ):
             if self.filter_files and self.unzip:
-                self._download_zip_members(self.files[0]["link"], output_folder)
+                self._download_zip_members(files[0]["link"], output_folder)
                 return
             if not self.unzip:
                 self.download_file(
-                    self.files[0]["link"], output_folder,
-                    file_name=self.files[0]["name"], file_size=self.files[0]["size"],
-                    file_hash=self.files[0]["hash"],
-                    file_hash_type=self.files[0].get("hash_type"),
+                    files[0]["link"], output_folder,
+                    file_name=files[0]["name"], file_size=files[0]["size"],
+                    file_hash=files[0]["hash"],
+                    file_hash_type=files[0].get("hash_type"),
                 )
                 return
             if self.print_only:
-                print(f"{_format_filename(self.files[0]['name'])}: COMPLETE")
+                print(f"{_format_filename(files[0]['name'])}: COMPLETE")
                 return
-            self._unpack_single_folder(self.files[0]["link"], output_folder)
+            self._unpack_single_folder(files[0]["link"], output_folder)
             return
 
         files_info = []
-        for f in self.files:
+        for f in files:
             files_info.append(f)
             self.download_file(
                 f["link"],

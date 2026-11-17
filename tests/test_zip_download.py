@@ -155,6 +155,21 @@ def test_zip_no_filter_dry_run_does_not_download(zip_server, tmp_path, capsys):
     assert state["ranges"] == []
 
 
+def test_info_lists_filtered_members_of_single_zip_without_downloading(zip_server):
+    url, state, _ = zip_server
+    downloader = dataset(url, filter_files=r"dataset/labels/.*\.xml")
+
+    files = downloader.files
+
+    assert [file["name"] for file in files] == [
+        "dataset/labels/one.xml",
+        "dataset/labels/two.xml",
+    ]
+    assert all(file["size"] for file in files)
+    assert state["bytes"] < len(state["payload"]) // 10
+    assert all(state["ranges"])
+
+
 def test_zip_no_range_support_fails_without_reading_archive(zip_server, tmp_path):
     url, state, _ = zip_server
     state["support_ranges"] = False

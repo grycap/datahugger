@@ -235,6 +235,7 @@ class DatasetDownloader:
                 "size": entry.file_size,
                 "hash": None,
                 "hash_type": None,
+                "is_archive_member": True,
             }
             for entry in archive.infolist()
             if not entry.is_dir()
